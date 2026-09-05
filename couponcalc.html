@@ -1,0 +1,658 @@
+<title>優待券チェッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper: #f1efe3;
+    --paper-raised: #f8f6ec;
+    --ink: #232b21;
+    --ink-soft: #5c6456;
+    --line: #cac5ac;
+    --line-soft: #ddd9c4;
+    --stamp: #a83232;
+    --stamp-soft: #a8323214;
+    --stamp-glow: #a8323226;
+    --gold: #8a7222;
+    --focus: #2f6e5e;
+    --shadow: 0 1px 0 rgba(35,43,33,0.06);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper: #1c1c17;
+      --paper-raised: #242420;
+      --ink: #ece6d6;
+      --ink-soft: #a6a08c;
+      --line: #45443a;
+      --line-soft: #34342c;
+      --stamp: #e06a5a;
+      --stamp-soft: #e06a5a1f;
+      --stamp-glow: #e06a5a33;
+      --gold: #d8bd6a;
+      --focus: #6fbfa6;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #1c1c17;
+    --paper-raised: #242420;
+    --ink: #ece6d6;
+    --ink-soft: #a6a08c;
+    --line: #45443a;
+    --line-soft: #34342c;
+    --stamp: #e06a5a;
+    --stamp-soft: #e06a5a1f;
+    --stamp-glow: #e06a5a33;
+    --gold: #d8bd6a;
+    --focus: #6fbfa6;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .ticket{
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* header */
+  .head{
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    padding: 22px 24px 18px;
+    position: relative;
+  }
+  .eyebrow{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  h1{
+    font-family: "Shippori Mincho", serif;
+    font-weight: 500;
+    font-size: 13px;
+    margin: 3px 0 0;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+  }
+
+  .threshold-row{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .threshold-stepper{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+  }
+  .threshold-stepper button{
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .threshold-stepper button:hover{ border-color: var(--ink-soft); }
+  .threshold-stepper button:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+  .threshold-row input{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 14px;
+    width: 68px;
+    padding: 5px 8px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .threshold-row input:focus-visible{
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  /* perforation */
+  .perf{
+    position: relative;
+    height: 0;
+    border-top: 2px dashed var(--line);
+    background: var(--paper-raised);
+  }
+  .perf::before, .perf::after{
+    content:"";
+    position:absolute;
+    top:-11px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .perf::before{ left: -11px; }
+  .perf::after{ right: -11px; }
+
+  /* items */
+  .items{
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-top: none;
+    border-bottom: none;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .item{
+    display:grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items:center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line-soft);
+    transition: opacity 0.2s ease;
+  }
+  .item:last-child{ border-bottom: none; }
+  .item.zero-qty{ opacity: 0.5; }
+
+  .item-name{
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: inherit;
+    padding: 4px 2px;
+    min-width: 0;
+    border-bottom: 1px solid transparent;
+  }
+  .item-name::placeholder{ color: var(--ink-soft); opacity: 0.7; }
+  .item-name:focus-visible{
+    outline: none;
+    border-bottom: 1px solid var(--focus);
+  }
+
+  .qty{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    font-family: "Roboto Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .qty button{
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qty button:hover{ border-color: var(--ink-soft); }
+  .qty button:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+  .qty span{ font-size: 13px; width: 18px; text-align:center; }
+
+  .item-price{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 500;
+    font-size: 14px;
+    width: 78px;
+    text-align: right;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 5px 7px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .item-price:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .item-remove{
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .item-remove:hover{ background: var(--stamp-soft); color: var(--stamp); }
+  .item-remove:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .add-row{
+    padding: 10px 8px 12px;
+  }
+  .add-btn{
+    width:100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px dashed var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .add-btn:hover{ border-color: var(--focus); color: var(--focus); }
+  .add-btn:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .empty{
+    padding: 24px 8px;
+    text-align:center;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+
+  /* summary */
+  .summary{
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 0 0 18px 18px;
+    padding: 20px 24px 24px;
+  }
+
+  .total-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom: 16px;
+  }
+  .total-label{
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.08em;
+  }
+  .total-amount{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 30px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .total-amount::before{ content: "¥"; font-size: 18px; margin-right: 2px; color: var(--ink-soft); }
+
+  .coupon-block{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .coupon-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+  }
+
+  .coupon-count{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .coupon-text .n{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .coupon-text .label{
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+
+  .next-block{
+    text-align: right;
+  }
+  .next-amount{
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    color: var(--gold);
+  }
+  .next-label{
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .next-block.reached .next-amount{ color: var(--focus); }
+
+  .progress-track{
+    margin-top: 12px;
+    height: 8px;
+    border-radius: 5px;
+    background: var(--line-soft);
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill{
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--gold), var(--stamp));
+    transition: width 0.35s ease;
+  }
+
+  .tick-labels{
+    display:flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: "Roboto Mono", monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .footnote{
+    text-align:center;
+    margin-top: 18px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+</style>
+
+<div class="ticket">
+  <div class="head">
+    <div class="eyebrow">COUPON THRESHOLD CHECKER</div>
+    <h1>優待券チェッカー</h1>
+    <div class="threshold-row">
+      <span id="thresholdLabel">円ごとに1枚:</span>
+      <div class="threshold-stepper">
+        <button type="button" id="thresholdMinus" aria-label="500円減らす">−</button>
+        <input type="number" id="thresholdInput" value="2000" min="500" step="500" inputmode="numeric" aria-label="優待券1枚あたりの金額">
+        <button type="button" id="thresholdPlus" aria-label="500円増やす">＋</button>
+      </div>
+      <span>円</span>
+    </div>
+  </div>
+
+  <div class="perf"></div>
+
+  <div class="items" id="itemsList"></div>
+
+  <div class="items" style="border-top:none; border-radius:0;">
+    <div class="add-row">
+      <button class="add-btn" id="addBtn" type="button">＋ 商品を追加</button>
+    </div>
+  </div>
+
+  <div class="perf"></div>
+
+  <div class="summary">
+    <div class="total-line">
+      <span class="total-label">合計金額</span>
+      <span class="total-amount" id="totalAmount">0</span>
+    </div>
+
+    <div class="coupon-block">
+      <div class="coupon-row">
+        <div class="coupon-count">
+          <div class="coupon-text">
+            <div class="n"><span id="couponN">0</span>枚</div>
+            <div class="label">使用／獲得できる優待券</div>
+          </div>
+        </div>
+        <div class="next-block" id="nextBlock">
+          <div class="next-amount" id="nextAmount">¥2,000</div>
+          <div class="next-label" id="nextLabel">あと</div>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="tick-labels">
+        <span id="tickStart">¥0</span>
+        <span id="tickEnd">¥2,000</span>
+      </div>
+    </div>
+
+    <div class="footnote">入力内容はこの端末のブラウザにのみ保存されます</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'coupon-checker-state-v1';
+  var state = { threshold: 2000, items: [] };
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === 'object'){
+          if(typeof parsed.threshold === 'number' && parsed.threshold > 0) state.threshold = parsed.threshold;
+          if(Array.isArray(parsed.items)) state.items = parsed.items;
+        }
+      }
+    }catch(e){}
+    if(state.items.length === 0){
+      state.items = [
+        { id: cryptoId(), name: '', price: 0, qty: 1 }
+      ];
+    }
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function cryptoId(){
+    return 'i' + Math.random().toString(36).slice(2, 10);
+  }
+
+  var itemsList = document.getElementById('itemsList');
+  var addBtn = document.getElementById('addBtn');
+  var thresholdInput = document.getElementById('thresholdInput');
+  var thresholdMinus = document.getElementById('thresholdMinus');
+  var thresholdPlus = document.getElementById('thresholdPlus');
+  var totalAmount = document.getElementById('totalAmount');
+  var couponN = document.getElementById('couponN');
+  var nextAmount = document.getElementById('nextAmount');
+  var nextLabel = document.getElementById('nextLabel');
+  var nextBlock = document.getElementById('nextBlock');
+  var progressFill = document.getElementById('progressFill');
+  var tickStart = document.getElementById('tickStart');
+  var tickEnd = document.getElementById('tickEnd');
+
+  function yen(n){
+    return '¥' + Math.round(n).toLocaleString('ja-JP');
+  }
+
+  function render(){
+    itemsList.innerHTML = '';
+    if(state.items.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = '商品がありません。追加してください。';
+      itemsList.appendChild(empty);
+    }
+    state.items.forEach(function(item){
+      var row = document.createElement('div');
+      row.className = 'item' + (item.qty === 0 ? ' zero-qty' : '');
+
+      var nameInput = document.createElement('input');
+      nameInput.className = 'item-name';
+      nameInput.type = 'text';
+      nameInput.placeholder = '商品名（任意）';
+      nameInput.value = item.name;
+      nameInput.setAttribute('aria-label', '商品名');
+      nameInput.addEventListener('input', function(){
+        item.name = nameInput.value;
+        saveState();
+      });
+
+      var qtyWrap = document.createElement('div');
+      qtyWrap.className = 'qty';
+      var minusBtn = document.createElement('button');
+      minusBtn.type = 'button';
+      minusBtn.textContent = '−';
+      minusBtn.setAttribute('aria-label', '数量を減らす');
+      minusBtn.addEventListener('click', function(){
+        item.qty = Math.max(0, item.qty - 1);
+        saveState();
+        render();
+      });
+      var qtySpan = document.createElement('span');
+      qtySpan.textContent = item.qty;
+      var plusBtn = document.createElement('button');
+      plusBtn.type = 'button';
+      plusBtn.textContent = '＋';
+      plusBtn.setAttribute('aria-label', '数量を増やす');
+      plusBtn.addEventListener('click', function(){
+        item.qty = item.qty + 1;
+        saveState();
+        render();
+      });
+      qtyWrap.appendChild(minusBtn);
+      qtyWrap.appendChild(qtySpan);
+      qtyWrap.appendChild(plusBtn);
+
+      var priceInput = document.createElement('input');
+      priceInput.className = 'item-price';
+      priceInput.type = 'number';
+      priceInput.inputMode = 'numeric';
+      priceInput.min = '0';
+      priceInput.step = '10';
+      priceInput.value = item.price;
+      priceInput.setAttribute('aria-label', '単価（円）');
+      priceInput.addEventListener('input', function(){
+        var v = parseFloat(priceInput.value);
+        item.price = isNaN(v) ? 0 : v;
+        saveState();
+        renderSummary();
+      });
+      priceInput.addEventListener('blur', function(){
+        if (item.price > 0) {
+          priceInput.value = item.price;
+        }
+      });
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'item-remove';
+      removeBtn.type = 'button';
+      removeBtn.innerHTML = '×';
+      removeBtn.setAttribute('aria-label', '商品を削除');
+      removeBtn.addEventListener('click', function(){
+        state.items = state.items.filter(function(i){ return i.id !== item.id; });
+        saveState();
+        render();
+      });
+
+      row.appendChild(nameInput);
+      row.appendChild(qtyWrap);
+      row.appendChild(priceInput);
+      row.appendChild(removeBtn);
+      itemsList.appendChild(row);
+    });
+    renderSummary();
+  }
+
+  function renderSummary(){
+    var total = state.items.reduce(function(sum, i){
+      return sum + (Number(i.price) || 0) * (Number(i.qty) || 0);
+    }, 0);
+
+    var threshold = state.threshold;
+    var coupons = Math.floor(total / threshold);
+    var remainder = total - coupons * threshold;
+    var toNext = remainder === 0 ? threshold : threshold - remainder;
+    var reachedExact = total > 0 && remainder === 0;
+
+    totalAmount.textContent = Math.round(total).toLocaleString('ja-JP');
+    couponN.textContent = coupons;
+
+    if(total === 0){
+      nextAmount.textContent = yen(threshold);
+      nextLabel.textContent = 'あと';
+      nextBlock.classList.remove('reached');
+      progressFill.style.width = '0%';
+    } else if(reachedExact){
+      nextAmount.textContent = 'ちょうど達成！';
+      nextLabel.textContent = '次まで';
+      nextBlock.classList.add('reached');
+      progressFill.style.width = '100%';
+    } else {
+      nextAmount.textContent = yen(toNext);
+      nextLabel.textContent = 'であと1枚';
+      nextBlock.classList.remove('reached');
+      var pct = (remainder / threshold) * 100;
+      progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+    }
+
+    var bandStart = coupons * threshold;
+    var bandEnd = bandStart + threshold;
+    tickStart.textContent = yen(bandStart);
+    tickEnd.textContent = yen(bandEnd);
+  }
+
+  addBtn.addEventListener('click', function(){
+    state.items.push({ id: cryptoId(), name: '', price: 0, qty: 1 });
+    saveState();
+    render();
+  });
+
+  thresholdInput.addEventListener('input', function(){
+    var v = parseFloat(thresholdInput.value);
+    state.threshold = (!isNaN(v) && v > 0) ? v : 2000;
+    saveState();
+    renderSummary();
+  });
+  thresholdInput.addEventListener('blur', function(){
+    if (state.threshold > 0) {
+      thresholdInput.value = state.threshold;
+    }
+  });
+
+  thresholdMinus.addEventListener('click', function(){
+    state.threshold = Math.max(500, state.threshold - 500);
+    thresholdInput.value = state.threshold;
+    saveState();
+    renderSummary();
+  });
+
+  thresholdPlus.addEventListener('click', function(){
+    state.threshold = state.threshold + 500;
+    thresholdInput.value = state.threshold;
+    saveState();
+    renderSummary();
+  });
+
+  loadState();
+  thresholdInput.value = state.threshold;
+  render();
+})();
+</script>
